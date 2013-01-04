@@ -55,13 +55,6 @@ static char *owl_db_tables[OWL_DB_TABLES_CNT] = {
 #define EAGLE_OWL_DB 		"eagleowl.db"
 #define EAGLE_OWL_STAT_DB 	"eagleowl_stat.db"
 
-static inline int get_day_of_week(int y, int m, int d)
-{
-  static int t[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
-  y -= m < 3;
-  return (y + y/4 - y/100 + y/400 + t[m-1] + d - 1) % 7;
-}
-
 static inline bool is_full_tariff(int hour)
 { // TODO: get info from energy_tariffv2 table!
   return (hour >= 8 && hour < 23)?true:false;
