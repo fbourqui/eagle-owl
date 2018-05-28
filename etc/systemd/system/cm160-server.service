@@ -1,10 +1,11 @@
 [Unit]
 Description=CM160 server
+After=systemd-udevd.target
 
 [Service]
 Type=forking
 ExecStartPre=/bin/sh -c '. /etc/eagleowl.conf;test -x $install_path/cm160 || { killall cm160; exit 0; }'
-ExecStart=/bin/sh -c '. /etc/eagleowl.conf; cd $install_path; $install_path/cm160 -d; modprobe -r cp210x; modprobe cp210x'
+ExecStart=/bin/sh -c '. /etc/eagleowl.conf; cd $install_path; $install_path/cm160 -d'
 ExecStop=/bin/sh -c 'killall cm160'
 
 [Install]
