@@ -3,3 +3,6 @@
 *.db
 
 !.gitignore
+
+/src/cm160
+/src/db_import

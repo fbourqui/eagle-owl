@@ -75,7 +75,7 @@ static void process_live_data(struct record_data *rec)
   if(fp)
   {
     if(rec->hour!=255) // to avoid writing strange values (i.e. date 2255, hour 255:255) that sometimes I got
-      fprintf(fp, "%02d/%02d/%04d %02d:%02d - %.02f kW\n", 
+      fprintf(fp, "%02d/%02d/%04d %02d:%02d - %.02f W\n", 
               rec->day, rec->month, rec->year, rec->hour, rec->min, w);
     fclose(fp);
   }
@@ -86,7 +86,8 @@ static void decode_frame(unsigned char *frame, struct record_data *rec)
   int volt = 230; // TODO: use the value from energy_param table (supply_voltage)
   rec->addr = 0; // TODO: don't use an harcoded addr value for the device...
   rec->year = frame[1]+2000;
-  rec->month = frame[2];
+  //rec->unknown = (frame[2] >> 4) & 0x0f;
+  rec->month = frame[2] & 0x0f;  // mask upper 4bit of month as maybe is used for something else 
   rec->day = frame[3];
   rec->hour = frame[4];
   rec->min = frame[5];
