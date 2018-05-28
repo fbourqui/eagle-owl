@@ -144,7 +144,7 @@
         }
 
         // setup control widget
-        var updateInterval = 2; // in seconds
+        var updateInterval = 10; // in seconds
         var duration = (updateInterval*totalPoints)/60; // in minutes
         duration += '';
         document.getElementById("duration").innerHTML = duration;

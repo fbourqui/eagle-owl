@@ -3,7 +3,7 @@ header("Content-Type: text/xml");
 
 $xml = new SimpleXMLElement('<list/>');
 
-$year = (isset($_POST["year"])) ? $_POST["year"] : "2010"/*NULL*/;
+$year = (isset($_POST["year"])) ? $_POST["year"] : "2012"/*NULL*/;
 $month = (isset($_POST["month"])) ? $_POST["month"] : "1"/* NULL*/;
 
 if ($year && $month)

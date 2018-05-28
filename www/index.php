@@ -14,18 +14,18 @@
 function month_to_string($nb)
 {
   $months = array(
-    1 => 'Janvier',
-    2 => 'Fevrier',
-    3 => 'Mars',
-    4 => 'Avril',
-    5 => 'Mai',
-    6 => 'Juin',
-    7 => 'Juillet',
-    8 => 'Aout',
-    9 => 'Septembre',
-    10 => 'Octobre',
-    11 => 'Novembre',
-    12 => 'Decembre',
+    1 => 'January',
+    2 => 'February',
+    3 => 'March',
+    4 => 'April',
+    5 => 'May',
+    6 => 'June',
+    7 => 'July',
+    8 => 'August',
+    9 => 'September',
+    10 => 'October',
+    11 => 'November',
+    12 => 'December',
   );
   return $months[$nb];
 }
@@ -82,9 +82,9 @@ function get_data($db, $year=0, $month=0, $day=0)
   $req.= "SUM(ch1_kw_avg / 1000) FROM energy_history ";
   if($unit <> "year"){
     $req.= "WHERE ";
-    if($year)  $req.= "year = \"$year\" ";
-    if($month) $req.= "AND month = \"$month\" ";
-    if($day)   $req.= "AND day = \"$day\" ";
+    if($year)  $req.= "year=$year ";
+    if($month) $req.= "AND month=$month ";
+    if($day)   $req.= "AND day=$day ";
   }
   $req.= "GROUP BY year";
   if($year)  $req.= ", month";
@@ -130,17 +130,17 @@ function get_stat_data($db, $year=0, $month=0, $day=0)
   $req2 = "kwh_total, kwh_week_total, kwh_weekend_total FROM ".$table." ";
   if($unit <> "year"){
     $req2.= "WHERE ";
-    if($year)  $req2.= "year = \"$year\" ";
-    if($month) $req2.= "AND month = \"$month\" ";
+    if($year)  $req2.= "year=$year ";
+    if($month) $req2.= "AND month=$month ";
     if($day){  
-	  $req2.= "AND day = \"$day\" ";
+	  $req2.= "AND day=$day ";
 	  $req2.="UNION SELECT hour+24, ".$req2."+1 AND hour=0 ";
 	}
   }
     
   $req.= $req2."ORDER BY $unit;";
 
-//  echo "<br/>$req<br/><br/>";
+  //echo "<br/>$req<br/><br/>";
   $db->busyTimeout (10000);
   $result = $db->query($req);
   $arr = array();
@@ -175,9 +175,9 @@ function get_weekend_data($db, $year=0, $month=0, $day=0)
     
     $req = "SELECT kwh_week_total, kwh_weekend_total FROM ".$table;
     $req.= " WHERE ";
-    if($year)  $req.= "year = \"$year\" ";
-    if($month) $req.= "AND month = \"$month\" ";
-    if($day)   $req.= "AND day = \"$day\" ";
+    if($year)  $req.= "year=$year ";
+    if($month) $req.= "AND month=$month ";
+    if($day)   $req.= "AND day=$day ";
   }
   else
     $req = "SELECT sum(kwh_week_total), sum(kwh_weekend_total) FROM energy_year_stat";
@@ -280,13 +280,10 @@ function callback(v) {
 
 function draw_chart(type, title, axis_x_name)
 {
-  <?php echo var_to_js('myData', $data); ?>
-//var colors = ['#AF0202', '#EC7A00', '#FCD200', '#81C714', '#000', '#000'];
+  <?php echo var_to_js('D', $data); ?>
 
-  //var myChart = new JSChart('graph', 'bar');
   var myChart = new JSChart('graph', type);
-  myChart.setDataArray(myData);
-//myChart.colorizeBars(colors);
+  myChart.setDataArray(D);
   myChart.setTitle(title);
   myChart.setTitleColor('#FFFFFF');
   myChart.setAxisNameX(axis_x_name);
@@ -296,16 +293,8 @@ function draw_chart(type, title, axis_x_name)
   myChart.setAxisNameColor('#FFFFFF');
   myChart.setAxisValuesColor('#FFFFFF');
   myChart.setBarValues(false);
-//myChart.setBarValuesColor('#AAAAFF');
-//myChart.setBarValuesFontSize(10);
-//myChart.setBarValuesDecimals(2);
-//  myChart.setAxisPaddingTop(60);
-//  myChart.setAxisPaddingRight(20);
   myChart.setAxisPaddingLeft(50);
   myChart.setAxisPaddingBottom(40);
-//myChart.setTextPaddingLeft(105);
-//myChart.setTitleFontSize(11);
-//myChart.setBarBorderWidth(1);
   myChart.setBarBorderColor('#C4C4C4');
   myChart.setBarSpacingRatio(40);
   if(type == 'bar')
@@ -313,41 +302,38 @@ function draw_chart(type, title, axis_x_name)
     myChart.setBarColor('#88FF88', 3)
     myChart.setBarColor('#FF8888', 2);
     myChart.setLegendForBar(1, 'Total');
-    myChart.setLegendForBar(2, 'Jour');
-    myChart.setLegendForBar(3, 'Nuit & week-end');
+    myChart.setLegendForBar(2, 'Day');
+    myChart.setLegendForBar(3, 'Night & week-end');
     myChart.setLegendShow(true);
     myChart.setLegendPosition('top middle');
 	myChart.setBarSpeed(100);
   }
-//myChart.setGrid(false);
   myChart.setSize(800, 400);
-//myChart.setBackgroundImage('chart_bg.jpg');
   myChart.setBackgroundColor('#222244');
   myChart.setTooltipPosition('nw');
   myChart.setLineSpeed(100);
 
-  var len=myData.length;
+  var len=D.length;
   for(var i=0; i<len; i++)
-//    myChart.setTooltip([myData[i][0], myData[i][1]]);
-    myChart.setTooltip([myData[i][0]]);
+    myChart.setTooltip([D[i][0]]);
 
   myChart.draw();
 }
 
 function draw_we_chart(title, axis_x_name)
 {
-  <?php echo var_to_js('myData', $wedata); ?>
+  <?php echo var_to_js('D', $wedata); ?>
 
   var myChart = new JSChart('wegraph', 'pie');
   var colors = ['#FF8888','#88FF88'];
-  myChart.setDataArray(myData);
+  myChart.setDataArray(D);
   myChart.colorizePie(colors);
   myChart.setTitle(title);
   myChart.setTitleColor('#FFFFFF');
   myChart.setSize(800, 200);
   myChart.setBackgroundColor('#222244');
-  myChart.setLegend('#FF8888', 'Jour');
-  myChart.setLegend('#88FF88', 'Nuit et week-end');
+  myChart.setLegend('#FF8888', 'Day');
+  myChart.setLegend('#88FF88', 'Night & week-end');
   myChart.setPieRadius(95);
   myChart.setShowXValues(false);
   myChart.setLegendShow(true);
@@ -409,7 +395,7 @@ if(!$data)
 else{
   echo "<div id=\"graph\"><script language=javascript>draw_chart('$graph_type', '$title','$axis_x_name')</script></div>";
   if($wedata)
-    echo "<div id=\"wegraph\"><script language=javascript>draw_we_chart('Tarifs','$axis_x_name')</script></div>";
+    echo "<div id=\"wegraph\"><script language=javascript>draw_we_chart('Rates','$axis_x_name')</script></div>";
 }
 
 ?>
