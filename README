@@ -73,7 +73,7 @@ Then execute:
 
 This will create eagleowl.db and eagleowl_stat.db
 
-To interface you cm160 device, simply launch cm160 executable and plug 
+To interface your cm160 device, simply launch cm160 executable and plug 
 your device to the computer. The program should automatically detect 
 the device and start acquisition of the data.
 
@@ -82,7 +82,7 @@ To access the live consuption, access the live.php from a browser
 (http://<your_ip>/live)
 
 When connected, the cm160 device starts to send the history stored in its memory
-(roughly 1 month of history), the it starts sending live data.
+(roughly 1 month of history), then it starts sending live data.
 So it can take a few time just after the connection before 
 the live data is actually updated.
 
