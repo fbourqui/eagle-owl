@@ -102,20 +102,25 @@ static void decode_frame(unsigned char *frame, struct record_data *rec)
   rec->isLiveData = (frame[0] == FRAME_ID_LIVE)? true:false;
 }
 
+struct thread_info {    /* Used as argument to thread_start() */
+  pthread_t thread_id;      /* ID returned by pthread_create() */
+  int       num_elems;      /* Number of frame to insert # */
+};
+
 // Insert history into DB worker thread
-void insert_db_history(void *data)
+static void insert_db_history(void *arg)
 {
   int i;
-  int num_elems = (int)data;
+  struct thread_info *tinfo = arg;
   // For an unknown reason, the cm160 sometimes sends a value > 12 for month
   // -> in that case we use the last valid month received.
   static int last_valid_month = 0; 
-  printf("insert %d elems\n", num_elems);
+  printf("insert %d elems\n", tinfo->num_elems);
   printf("insert into db...\n");
   clock_t cStartClock = clock();
 
   db_begin_transaction();
-  for(i=0; i<num_elems; i++)
+  for(i=0; i<tinfo->num_elems; i++)
   {
     unsigned char *frame = history[i];
     struct record_data rec;
@@ -127,7 +132,7 @@ void insert_db_history(void *data)
       last_valid_month = rec.month;
 
     db_insert_hist(&rec);
-    printf("\r %.1f%%", min(100, 100*((double)i/num_elems)));
+    printf("\r %.1f%%", min(100, 100*((double)i/tinfo->num_elems)));
     fflush(stdout);
   }
   db_update_status();
@@ -223,8 +228,9 @@ static int process_frame(int dev_id, unsigned char *frame)
         fflush(stdout);
         receive_history = false;
         // Now, insert the history into the db
-        pthread_t thread;
-        pthread_create(&thread, NULL, (void *)&insert_db_history, (void *)frame_id);
+        struct thread_info *tinfo;// = malloc(sizeof(struct thread_info));
+        tinfo->num_elems = frame_id;
+        pthread_create(&tinfo->thread_id, NULL, (void *)&insert_db_history, &tinfo);
       }
       
       process_live_data(&rec);
