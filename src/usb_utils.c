@@ -47,12 +47,7 @@ static int scan_device(struct usb_device *dev, int *dev_cnt)
     int fd;
     int rc;
     char filename[80];
-    /*strcpy(filename, "/dev/bus/usb/");
-    strcat(filename, dev->bus->dirname);
-    strcat(filename, "/");
-    strcat(filename, dev->filename);
-    */
-    sprintf(filename, "/dev/bus/usb/%s/%s", dev->bus->dirname, dev->filename);
+    snprintf(filename, sizeof filename, "/dev/bus/usb/%s/%s", dev->bus->dirname, dev->filename);
     fd = open(filename, O_WRONLY);
     if (fd < 0) {
 	    	perror("Error opening output file");
