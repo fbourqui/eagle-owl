@@ -25,7 +25,8 @@
 #include <usb.h>
 #include <pthread.h>
 #include <fcntl.h>
-
+#include <linux/usbdevice_fs.h>
+#include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -56,6 +57,8 @@ static char WAIT_MSG[11] = {
 
 struct cm160_device g_devices[MAX_DEVICES];
 static unsigned char history[HISTORY_SIZE][11];
+bool receive_history;
+int frame_id;
 
 static void process_live_data(struct record_data *rec) 
 {
@@ -136,8 +139,6 @@ void insert_db_history(void *data)
          (clock() - cStartClock) / (double)CLOCKS_PER_SEC);
 }
 
-bool receive_history = true;
-int frame_id = 0;
 static int process_frame(int dev_id, unsigned char *frame)
 {
   int i;
@@ -313,9 +314,36 @@ static int handle_device(int dev_id)
   return 0;
 }
 
+static int reset_device() 
+{
+  int fd, rc;
+  char* dirname = g_devices[0].usb_dev->bus->dirname;
+  char* filename = g_devices[0].usb_dev->filename;
+  ssize_t bufsz = snprintf(NULL, 0, "/dev/bus/usb/%s/%s", dirname, filename);
+  char* file = malloc(bufsz + 1);
+  snprintf(file, bufsz + 1, "/dev/bus/usb/%s/%s", dirname, filename);
+  fd = open(file, O_WRONLY);
+  if (fd < 0) {
+    printf("Error opening output file");
+    return fd;
+  }
+
+  printf("Resetting USB device %s\n", file);
+  free(file);
+  rc = ioctl(fd, USBDEVFS_RESET, 0);
+  if (rc < 0) {
+    printf("Error in ioctl");
+    close(fd);
+    return rc;
+  }
+  printf("Reset successful\n");
+  close(fd);
+  return 0;
+}
 
 int main(int argc, char **argv)
 {
+  bool first_start = true;
   int dev_cnt;
   if(argc>1 && (strcmp(argv[1], "-d")==0) )
     demonize(argv[0]);
@@ -341,8 +369,12 @@ int main(int argc, char **argv)
     handle_device(0); 
     usb_close(g_devices[0].hdev);
     db_close();
+    // reset device if there was a failure
+    if (first_start)
+      first_start = false;
+    else
+      reset_device();
   }
 
   return 0;
 }
-
