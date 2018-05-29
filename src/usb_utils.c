@@ -22,6 +22,11 @@
 #include <stdio.h>
 #include <usb.h>
 #include "cm160.h"
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/ioctl.h>
+#include <linux/usbdevice_fs.h>
+#include <string.h>
 
 #define OWL_VENDOR_ID 0x0fde
 #define CM160_DEV_ID  0xca05
@@ -33,11 +38,35 @@ static int scan_device(struct usb_device *dev, int *dev_cnt)
   if(dev->descriptor.idVendor == OWL_VENDOR_ID && 
      dev->descriptor.idProduct == CM160_DEV_ID)
   {
-    printf("Found compatible device #%d: %04x:%04x (%s)\n",
+    printf("Found compatible device #%d: %04x:%04x (%s/%s)\n",
            *dev_cnt, dev->descriptor.idVendor, 
-           dev->descriptor.idProduct, dev->filename);
+           dev->descriptor.idProduct, dev->bus->dirname, dev->filename);
     g_devices[*dev_cnt].usb_dev = dev;
     (*dev_cnt)++;
+    //reset device
+    int fd;
+    int rc;
+    char filename[80];
+    /*strcpy(filename, "/dev/bus/usb/");
+    strcat(filename, dev->bus->dirname);
+    strcat(filename, "/");
+    strcat(filename, dev->filename);
+    */
+    sprintf(filename, "/dev/bus/usb/%s/%s", dev->bus->dirname, dev->filename);
+    fd = open(filename, O_WRONLY);
+    if (fd < 0) {
+	    	perror("Error opening output file");
+			return 1;
+    }
+
+    printf("Resetting USB device %s\n", filename);
+    rc = ioctl(fd, USBDEVFS_RESET, 0);
+    if (rc < 0) {
+	    	perror("Error in ioctl");
+			return 1;
+    }
+    printf("Reset successful\n");
+    close(fd);
   }
 
   return 0;

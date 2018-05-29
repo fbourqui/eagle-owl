@@ -328,7 +328,7 @@ int main(int argc, char **argv)
     frame_id = 0;
     printf("Wait for cm160 device to be connected\n");
     while((dev_cnt = scan_usb()) == 0)
-      sleep(2);
+      sleep(1);
     printf("Found %d compatible device%s\n", dev_cnt, dev_cnt>1?"s":"");
 
     // Only 1 device supported
