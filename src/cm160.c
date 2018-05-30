@@ -59,6 +59,10 @@ struct cm160_device g_devices[MAX_DEVICES];
 static unsigned char history[HISTORY_SIZE][11];
 bool receive_history;
 int frame_id;
+struct thread_info {        /* Used as argument to thread_start() */
+  pthread_t thread_id;      /* ID returned by pthread_create() */
+  int       num_elems;      /* Number of frame to insert */
+};
 
 static void process_live_data(struct record_data *rec) 
 {
@@ -102,25 +106,21 @@ static void decode_frame(unsigned char *frame, struct record_data *rec)
   rec->isLiveData = (frame[0] == FRAME_ID_LIVE)? true:false;
 }
 
-struct thread_info {    /* Used as argument to thread_start() */
-  pthread_t thread_id;      /* ID returned by pthread_create() */
-  int       num_elems;      /* Number of frame to insert # */
-};
-
 // Insert history into DB worker thread
 static void insert_db_history(void *arg)
 {
   int i;
   struct thread_info *tinfo = arg;
+  int num_elems = tinfo->num_elems;
   // For an unknown reason, the cm160 sometimes sends a value > 12 for month
   // -> in that case we use the last valid month received.
   static int last_valid_month = 0; 
-  printf("insert %d elems\n", tinfo->num_elems);
+  printf("insert %d elems\n", num_elems);
   printf("insert into db...\n");
   clock_t cStartClock = clock();
 
   db_begin_transaction();
-  for(i=0; i<tinfo->num_elems; i++)
+  for(i=0; i<num_elems; i++)
   {
     unsigned char *frame = history[i];
     struct record_data rec;
@@ -132,7 +132,7 @@ static void insert_db_history(void *arg)
       last_valid_month = rec.month;
 
     db_insert_hist(&rec);
-    printf("\r %.1f%%", min(100, 100*((double)i/tinfo->num_elems)));
+    printf("\r %.1f%%", min(100, 100*((double)i/num_elems)));
     fflush(stdout);
   }
   db_update_status();
@@ -228,9 +228,8 @@ static int process_frame(int dev_id, unsigned char *frame)
         fflush(stdout);
         receive_history = false;
         // Now, insert the history into the db
-        struct thread_info *tinfo;// = malloc(sizeof(struct thread_info));
-        tinfo->num_elems = frame_id;
-        pthread_create(&tinfo->thread_id, NULL, (void *)&insert_db_history, &tinfo);
+        struct thread_info tinfo = {.num_elems = frame_id};
+        pthread_create(&tinfo.thread_id, NULL, (void *)&insert_db_history, &tinfo);
       }
       
       process_live_data(&rec);
@@ -349,7 +348,6 @@ static int reset_device()
 
 int main(int argc, char **argv)
 {
-  bool first_start = true;
   int dev_cnt;
   if(argc>1 && (strcmp(argv[1], "-d")==0) )
     demonize(argv[0]);
@@ -372,14 +370,11 @@ int main(int argc, char **argv)
       db_close();
       break;
     }
-    handle_device(0); 
+
+    handle_device(0);
+    reset_device();
     usb_close(g_devices[0].hdev);
     db_close();
-    // reset device if there was a failure
-    if (first_start)
-      first_start = false;
-    else
-      reset_device();
   }
 
   return 0;
